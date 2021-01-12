@@ -10,6 +10,14 @@ import (
 
 var ErrInvalidChecksum = errors.New("Invalid checksum")
 
+type CountryCode struct {
+	code string
+}
+
+func (cc *CountryCode) String() string {
+	return cc.code
+}
+
 type IBAN struct {
 	cc  CountryCode
 	str string
