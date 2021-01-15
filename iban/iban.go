@@ -8,39 +8,55 @@ import (
 	"strings"
 )
 
+// Errors exported from this file
 var ErrInvalidChecksum = errors.New("Invalid checksum")
 
-type CountryCode struct {
-	code string
-}
-
-func (cc *CountryCode) String() string {
-	return cc.code
-}
-
 type IBAN struct {
-	cc  CountryCode
+	cc  *CountryCode
 	str string
 }
 
-func (i *IBAN) String() string {
-	return i.str
+func (iban *IBAN) String() string {
+	return iban.str
 }
 
-func (i *IBAN) CountryCode() CountryCode {
-	return i.cc
+func (iban *IBAN) CountryCode() *CountryCode {
+	return iban.cc
 }
 
-func (i *IBAN) generate(bban string) *IBAN {
+func (iban *IBAN) Print() string {
 
 	var b strings.Builder
 
-	b.WriteString(replaceChars(bban))
+	l := len(iban.str)
 
-	b.WriteString("00")
+	for i := 0; i < l; i = i + 4 {
 
-	i.str = i.cc.String() + addChecksum(b.String())
-	return i
+		if i+4 > l {
+
+			b.WriteString(iban.str[i:])
+
+		} else {
+
+			b.WriteString(" ")
+			b.WriteString(iban.str[i : i+4])
+
+		}
+	}
+
+	return b.String()
+}
+
+func (iban *IBAN) generate(bban string) *IBAN {
+
+	var b strings.Builder
+
+	b.WriteString(iban.cc.String())
+
+	b.WriteString(addChecksum(replaceChars(bban + iban.cc.String())))
+
+	iban.str = b.String()
+	return iban
 }
 
 func replaceChars(s string) string {
@@ -61,7 +77,7 @@ func replaceChars(s string) string {
 
 func addChecksum(s string) string {
 	i := new(big.Int)
-	i.SetString(s, 10)
+	i.SetString(s+"00", 10)
 	cs := int(98 - i.Mod(i, big.NewInt(97)).Int64())
 
 	var b strings.Builder
@@ -69,15 +85,19 @@ func addChecksum(s string) string {
 		b.WriteRune('0')
 	}
 	b.WriteString(strconv.Itoa(cs))
-	b.WriteString(s)
+	b.WriteString(s[:len(s)-4])
 	return b.String()
 }
 
 func validateChecksum(iban string) error {
 
+	var b strings.Builder
+	b.WriteString(iban[4:])
+	b.WriteString(iban[:4])
+
 	i := new(big.Int)
 
-	i.SetString(replaceChars(iban), 10)
+	i.SetString(replaceChars(b.String()), 10)
 
 	cs := i.Mod(i, big.NewInt(97)).Int64()
 	if cs != 1 {

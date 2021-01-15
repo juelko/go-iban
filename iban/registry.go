@@ -20,3 +20,14 @@ type Validator interface {
 type Generator interface {
 	Generate(bban string) *IBAN
 }
+
+type registry struct {
+	countries map[CountryCode]Country
+}
+
+func (r *registry) Validator(cc CountryCode) (Validator, error) {
+	return nil, errors.New("Not implemented")
+}
+func (r *registry) Generator(cc CountryCode) (Generator, error) {
+	return nil, errors.New("Not implemented")
+}
